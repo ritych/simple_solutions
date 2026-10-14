@@ -1,0 +1,9 @@
+[project]
+name = "deribit-price-service"
+version = "1.0.0"
+description = "Collect Deribit index prices and serve them over a read API"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

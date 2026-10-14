@@ -1,0 +1,79 @@
+name: deribit-prices
+
+x-app-environment: &app-environment
+  DATABASE_URL: postgresql+psycopg://price:price@db:5432/prices
+  REDIS_URL: redis://redis:6379/0
+  DERIBIT_BASE_URL: https://www.deribit.com/api/v2
+  TRACKED_TICKERS: btc_usd,eth_usd
+  PRICE_FETCH_INTERVAL_SECONDS: "60"
+  HTTP_TIMEOUT_SECONDS: "10"
+
+services:
+  api:
+    build: .
+    image: deribit-prices:local
+    container_name: deribit-prices-api
+    command: ["./docker/start-api.sh"]
+    environment:
+      <<: *app-environment
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  worker:
+    build: .
+    image: deribit-prices:local
+    container_name: deribit-prices-worker
+    command: ["./docker/start-worker.sh"]
+    environment:
+      <<: *app-environment
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: deribit-prices-db
+    environment:
+      POSTGRES_USER: price
+      POSTGRES_PASSWORD: price
+      POSTGRES_DB: prices
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U price -d prices"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: deribit-prices-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  postgres_data:
