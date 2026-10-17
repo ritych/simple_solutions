@@ -246,23 +246,7 @@ source .venv/bin/activate
 pytest
 ```
 
-В GitLab тот же прогон описан в `.gitlab-ci.yml`.
-
 Репозиторий PostgreSQL и живой вызов Deribit unit-тестами не проверяются. Их закрывает запуск Compose и запросы из раздела про API.
-
-## Публикация в GitLab
-
-Репозиторий рассчитан на GitLab: CI лежит в `.gitlab-ci.yml`.
-
-```bash
-git init
-git add .
-git commit -m "Add Deribit index price collector and read API"
-git remote add origin git@gitlab.com:<group>/<project>.git
-git push -u origin HEAD
-```
-
-После пуша CI ставит зависимости и запускает `pytest`. Секреты в репозиторий не кладутся: рабочий `.env` указан в `.gitignore`.
 
 ## Схема таблицы
 
